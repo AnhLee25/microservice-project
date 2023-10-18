@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  spring-app:
+    build: .
+    image: payment-service
+    container_name: payment-service
+    restart: on-failure
+    env_file: ./.env
+    ports:
+      - $SPRING_LOCAL_PORT:$SPRING_DOCKER_PORT
+    depends_on:
+      - kafka
+      - mysql
+      - redis
+      - minio
+      - elasticsearch
+
+    volumes:
+      - ./:/app
+    environment:
+      SPRING_DATASOURCE_URL: $SPRING_DATASOURCE_URL
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:$KAFKA_DOCKER_PORT
+      #----------------Solution 2---------------#
+      MYSQL_HOST: mysql
+      MYSQL_USER: $MYSQLDB_USER
+      MYSQL_PASSWORD: $MYSQLDB_ROOT_PASSWORD
+      MYSQL_DB: $MYSQLDB_DATABASE
+
+      MINIO_SERVER_ACCESS_KEY: $MINIO_SERVER_ACCESS_KEY
+      MINIO_SERVER_SECRET_KEY: $MINIO_SERVER_SECRET_KEY
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: Aa@12345678
+
+      #----------------Solution 1---------------#
+  #        SPRING_APPLICATION_JSON: '{
+  #              "spring.datasource.url"  : "jdbc:mysql://mysql:3306/payment_db?allowPublicKeyRetrieval=true",
+  #              "spring.datasource.username" : "$MYSQLDB_USER",
+  #              "spring.datasource.password" : "$MYSQLDB_ROOT_PASSWORD",
+  #              "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQLDialect",
+  #              "spring.jpa.hibernate.ddl-auto" : "update"
+  #            }'
+  zookeeper:
+    env_file:
+      - ./.env
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: $ZOOKEEPER_CLIENT_DOCKER_PORT
+      ZOOKEEPER_TICK_TIME: $ZOOKEEPER_TICK_TIME
+    ports:
+      - $ZOOKEEPER_CLIENT_LOCAL_PORT:$ZOOKEEPER_CLIENT_DOCKER_PORT
+  kafka:
+    env_file:
+      - ./.env
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - $KAFKA_LOCAL_PORT:$KAFKA_DOCKER_PORT
+    expose:
+      - $KAFKA_DOCKER_PORT
+    volumes:
+      - kafka-data:/kafka/data
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:$ZOOKEEPER_CLIENT_DOCKER_PORT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:$KAFKA_DOCKER_PORT,PLAINTEXT_HOST://localhost:$KAFKA_LOCAL_PORT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  minio:
+    image: bitnami/minio:latest
+    env_file:
+      - ./.env
+    ports:
+      - 9000:9000
+    environment:
+      - MINIO_ROOT_USER=minio-root-user
+      - MINIO_ROOT_PASSWORD=minio-root-password
+    volumes:
+      - minio-data:/var/lib/minio
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - payment-data:/var/lib/mysql
+    ports:
+      - $MYSQLDB_LOCAL_PORT:$MYSQLDB_DOCKER_PORT
+    expose:
+      - $MYSQLDB_DOCKER_PORT
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQLDB_ROOT_PASSWORD
+      MYSQL_DATABASE: $MYSQLDB_DATABASE
+
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - 6380:6379
+    command: redis-server --save 20 1 --loglevel warning --requirepass Aa@12345678
+    volumes:
+      - redis:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.2
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.2
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+volumes:
+  payment-data:
+  kafka-data:
+  redis:
+  minio-data:
+
+networks:
+  app-tier:
+    driver: bridge

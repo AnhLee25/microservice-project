@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: "payment-service"
+build:
+  version: "1.0.0"

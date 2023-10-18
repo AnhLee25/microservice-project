@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: payment-service
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  #Database connection
+  datasource:
+    url: jdbc:mysql://localhost:3306/ecommerce_db
+    username: root
+    password: password
+  kafka:
+    bootstrap-servers: localhost:29092
+#EUREKA
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+constant:
+  kafka:
+    topic:
+      payment-event: payment-event
+server:
+  port: 8001

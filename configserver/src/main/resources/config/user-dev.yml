@@ -1,0 +1,115 @@
+build:
+  version: 1.0.1
+
+spring:
+  application:
+    name: user
+#  profiles:
+#    active: dev
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  #Database connection
+  datasource:
+    url: jdbc:mysql://localhost:3306/ecommerce_db
+    username: root
+    password: password
+  #Email Configuration
+  mail:
+    host: smtp.gmail.com
+    username: anhlee.beta@gmail.com
+    password: erkhiicsfxluijij
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      group-id: test
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: com.shop.ecommerce.response
+  redis:
+    port: 6379
+    host: localhost
+
+#  main:
+#    allow-bean-definition-overriding: true
+#  REDIS
+
+#Server
+server:
+  port: 800
+#Constants
+constant:
+  jwt:
+    secret-key: "977bedecf24295f7ec4af0786b114995a5d47c389aadcdda6c0a51cdaabad1fbf1007465a838dff11c808ca860c298bb0803038edcda5297695964bf7f0f5155"
+    refresh-token-duration: 86400000
+    access-token-duration: 600000
+
+#Logging Configuration
+logging:
+  #  level.com.shop: debug
+  #  level.root: info
+  file:
+    name: ecommerce.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: ecommerce-project-%d{yyyy-MM-dd}.%i.log
+      max-file-size: 100KB
+      total-size-cap: 1MB
+      max-history: 14
+      clean-history-on-start: true
+#SWAGGER
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+#EUREKA
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+#    register-with-eureka: true
+#    fetch-registry: true
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: refresh
+#  endpoint:
+#    shutdown:
+#      enable: true
+#  info:
+#    env:
+#      enabled: true
+#
+#endpoints:
+#  shutdown:
+#    enable: true
+
+
+info:
+  app:
+    name: "user-service"
+    description: "This is user service"
+    version: "1.0.0"
